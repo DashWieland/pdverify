@@ -38,6 +38,8 @@ class Report:
     rolloff_hz: float
     flatness: float
     timbre: str
+    bands: dict  # band label -> fraction of energy
+    top_partials: list  # strongest spectral peaks (Hz), loudest first
     meta: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -70,9 +72,21 @@ class Report:
             f"level       peak {self.peak_dbfs:+.2f} dBFS   rms {self.rms_dbfs:+.2f} dBFS   crest {self.crest_factor:.2f}",
             f"pitch       {self._fmt_pitch()}",
             f"spectrum    centroid {self.centroid_hz:.0f} Hz   rolloff {self.rolloff_hz:.0f} Hz   flatness {self.flatness:.3f}  -> {self.timbre}",
+            f"bands       {self._fmt_bands()}",
+            f"partials    {self._fmt_partials()}",
             f"integrity   silent={self.is_silent}  clipped={self.is_clipped}  nan/inf={self.has_nan_inf}  dc={self.dc_offset:+.4f}",
         ]
         return "\n".join(lines)
+
+    def _fmt_bands(self) -> str:
+        if not self.bands:
+            return "(n/a)"
+        return "  ".join(f"{name} {pct * 100:.0f}%" for name, pct in self.bands.items())
+
+    def _fmt_partials(self) -> str:
+        if not self.top_partials:
+            return "(none)"
+        return ", ".join(f"{hz:.0f} Hz" for hz in self.top_partials)
 
     def _fmt_pitch(self) -> str:
         if not self.f0_hz:

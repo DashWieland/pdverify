@@ -63,4 +63,6 @@ def analyze(audio: AudioBuffer | np.ndarray, sr: int = 44100) -> Report:
         rolloff_hz=spectral.spectral_rolloff(safe, sr),
         flatness=flat,
         timbre=timbre,
+        bands=spectral.band_energies(safe, sr),
+        top_partials=spectral.top_partials(safe, sr),
     )

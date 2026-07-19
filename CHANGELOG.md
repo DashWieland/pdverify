@@ -2,6 +2,24 @@
 
 ## 0.1.0 (unreleased)
 
+### Spectral analysis and visualization
+
+- `analyze()` now reports a full-spectrum band-energy breakdown (sub / bass /
+  low-mid / mid / high-mid / presence / brilliance, summing to ~1) and the
+  strongest partials — enough to actually describe a timbre, not just one
+  centroid number. Found by dogfooding: a single centroid hid a real patch's
+  character.
+- `pdverify spectrogram` (and `viz.spectrogram` / `viz.spectrum`) save PNGs;
+  needs the `[plot]` extra (matplotlib), lazy-imported so the core stays
+  numpy-only.
+- Fix: spectral centroid and rolloff are now **power**-weighted, not
+  magnitude-weighted. Magnitude weighting let a 16-bit quantization noise floor
+  drag the centroid to ~9.7 kHz on a bass-heavy drone; power weighting reports
+  the true ~300 Hz body.
+- Fix: frequency bands now span 0..Nyquist with no gaps, so DC/subsonic and
+  near-Nyquist aliasing (common with Pd's non-band-limited oscillators) are
+  counted instead of silently dropped.
+
 ### M1 — expectations and scoring
 
 - `expect.*` builders for composable expectations: gates (`not_silent`,

@@ -97,6 +97,19 @@ def cmd_render(args) -> int:
     return 0
 
 
+def cmd_spectrogram(args) -> int:
+    from .viz import spectrogram
+
+    path = Path(args.patch)
+    if path.suffix.lower() == ".wav":
+        audio = read_wav(path)
+    else:
+        audio = render(str(path), _spec(args)).audio
+    out = spectrogram(audio, args.output, fmax=args.fmax, title=path.stem)
+    print(f"wrote {out}")
+    return 0
+
+
 def cmd_doctor(args) -> int:
     print(f"pdverify {__version__}")
     try:
@@ -155,6 +168,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--json", action="store_true", help="emit the scorecard as JSON")
     _add_render_opts(s)
     s.set_defaults(func=cmd_assert)
+
+    g = sub.add_parser("spectrogram", help="render a patch (or read a .wav) and save a spectrogram PNG")
+    g.add_argument("patch", help="path to a .pd patch or a .wav file")
+    g.add_argument("-o", "--output", required=True, help="output .png path")
+    g.add_argument("--fmax", type=float, default=16000.0, help="max frequency shown (default 16000)")
+    _add_render_opts(g)
+    g.set_defaults(func=cmd_spectrogram)
 
     d = sub.add_parser("doctor", help="check the Pd install and capture pipeline")
     d.add_argument("--pd", default=None, help="path to the Pd executable")

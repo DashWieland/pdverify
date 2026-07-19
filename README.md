@@ -9,11 +9,15 @@ $ pdverify analyze my_patch.pd
 duration    3.000s  44100 Hz  2ch
 level       peak -12.04 dBFS   rms -15.05 dBFS   crest 1.41
 pitch       440.01 Hz -> A4 (+0 cents)  conf 1.00
-spectrum    centroid 466 Hz   rolloff 441 Hz   flatness 0.000  -> sine
+spectrum    centroid 440 Hz   rolloff 441 Hz   flatness 0.000  -> sine
+bands       sub 0%  bass 0%  low_mid 100%  mid 0%  high_mid 0%  presence 0%  brilliance 0%
+partials    440 Hz
 integrity   silent=False  clipped=False  nan/inf=False  dc=-0.0000
 
 a sine tone at 440.0 Hz (A4, +0 cents); peak -12.0 dBFS, rms -15.1 dBFS over 3.00s.
 ```
+
+For a visual, `pdverify spectrogram my_patch.pd -o out.png` (needs `pip install pdverify[plot]`).
 
 ## How it fits with the patch-building tools
 
