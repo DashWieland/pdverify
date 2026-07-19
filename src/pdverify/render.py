@@ -30,6 +30,11 @@ from .wavio import read_wav
 from .wrapper import build_wrapper
 
 _PEAK_RE = re.compile(r"biggest amplitude\s*=\s*([0-9.eE+-]+)")
+# soundfiler normalizes any array whose peak exceeds 1.0 when writing, and prints
+# e.g. "reducing max amplitude 8.000000 to 1". Normalization only *scales* (it
+# preserves the waveform), so we can undo it exactly and recover the true signal
+# — including its over-unity peak, which is what dac~ would clip on playback.
+_NORMALIZE_RE = re.compile(r"reducing max amplitude\s+([0-9.eE+-]+)\s+to 1")
 
 
 @dataclass(frozen=True)
@@ -143,13 +148,22 @@ def render(patch: str | Path, spec: RenderSpec | None = None) -> RenderResult:
             )
 
         audio = read_wav(out_wav)
-        peak_m = _PEAK_RE.search(console)
+        norm_m = _NORMALIZE_RE.search(console)
+        true_peak: float | None = None
+        if norm_m:
+            true_peak = float(norm_m.group(1))
+            if true_peak > 1.0:
+                # undo soundfiler's normalization to recover the real signal level
+                audio = AudioBuffer(audio.samples * true_peak, audio.sr)
+        else:
+            peak_m = _PEAK_RE.search(console)
+            true_peak = float(peak_m.group(1)) if peak_m else None
         result = RenderResult(
             audio=audio,
             wav_path=(out_wav if spec.keep_workdir else None),
             pd_console=console,
             missing_externals=_parse_missing_externals(console),
-            soundfiler_peak=(float(peak_m.group(1)) if peak_m else None),
+            soundfiler_peak=true_peak,
             pd_version=pd.version,
             returncode=proc.returncode,
             wall_ms=wall_ms,

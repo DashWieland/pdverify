@@ -52,6 +52,35 @@ def test_clipping_detected():
     assert r.is_clipped
 
 
+def test_clipping_detected_stereo():
+    # a 2-D (frames x channels) buffer is what render() actually produces;
+    # is_clipped must handle it without choking on array truthiness.
+    left = _sine(440, 0.5)
+    right = np.ones(SR)  # clipped channel
+    buf = AudioBuffer(np.stack([left, right], axis=1), SR)
+    assert analyze(buf).is_clipped
+
+
+def test_isolated_full_scale_sample_is_not_clipping():
+    x = _sine(440, 0.5)
+    x[123] = 1.0  # a single grazing sample, not a run
+    assert not analyze(AudioBuffer(x, SR)).is_clipped
+
+
+def test_over_unity_is_clipping():
+    # render() hands analyze a true-scale signal that can exceed +/-1; dac~ would
+    # clip it on playback, so it must be flagged.
+    r = analyze(AudioBuffer(_sine(440, 2.0), SR))
+    assert r.is_clipped
+    assert r.peak_dbfs > 0.0
+
+
+def test_full_scale_sine_not_clipping():
+    r = analyze(AudioBuffer(_sine(440, 1.0), SR))
+    assert not r.is_clipped
+    assert r.peak_dbfs == pytest.approx(0.0, abs=0.1)
+
+
 def test_nan_detected():
     x = _sine(440, 0.5)
     x[100] = np.nan

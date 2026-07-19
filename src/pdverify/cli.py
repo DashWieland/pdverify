@@ -7,11 +7,12 @@ import shutil
 import sys
 from pathlib import Path
 
-from . import __version__
+from . import __version__, expect
 from .analyze import analyze
 from .errors import PdNotFound, PdVerifyError
 from .pd_locate import discover
 from .render import RenderSpec, render
+from .verify import verify
 from .wavio import read_wav
 
 _DOCTOR_PATCH = (
@@ -50,6 +51,38 @@ def cmd_analyze(args) -> int:
         print(report.pretty())
         print("\n" + report.summary())
     return 0
+
+
+def _expectations_from_args(args) -> list:
+    exps = [expect.finite()]
+    if not args.allow_silent:
+        exps.append(expect.not_silent())
+    if not args.allow_clip:
+        exps.append(expect.no_clipping())
+    if args.note is not None:
+        exps.append(expect.note(args.note, tol_cents=args.tol_cents))
+    if args.pitch is not None:
+        exps.append(expect.pitch(args.pitch, tol_cents=args.tol_cents))
+    if args.level is not None:
+        exps.append(expect.level(args.level, tol_db=args.tol_db))
+    if args.tonal:
+        exps.append(expect.tonal())
+    if args.noisy:
+        exps.append(expect.noisy())
+    if args.centroid is not None:
+        exps.append(expect.centroid(args.centroid))
+    return exps
+
+
+def cmd_assert(args) -> int:
+    card = verify(args.patch, _expectations_from_args(args), spec=_spec(args))
+    if args.json:
+        print(card.to_json())
+    else:
+        print(card.feedback())
+    if not card.gates_passed:
+        return 3
+    return 0 if card.passed else 1
 
 
 def cmd_render(args) -> int:
@@ -106,6 +139,22 @@ def build_parser() -> argparse.ArgumentParser:
     r.add_argument("-o", "--output", required=True, help="output .wav path")
     _add_render_opts(r)
     r.set_defaults(func=cmd_render)
+
+    s = sub.add_parser("assert", help="render a patch and check it against expectations")
+    s.add_argument("patch", help="path to a .pd patch")
+    s.add_argument("--note", default=None, help="expected pitch as a note name, e.g. A4")
+    s.add_argument("--pitch", type=float, default=None, help="expected pitch in Hz")
+    s.add_argument("--tol-cents", type=float, default=50.0, help="pitch tolerance in cents (default 50)")
+    s.add_argument("--level", type=float, default=None, help="expected RMS level in dBFS")
+    s.add_argument("--tol-db", type=float, default=3.0, help="level tolerance in dB (default 3)")
+    s.add_argument("--tonal", action="store_true", help="expect a tonal (low-flatness) output")
+    s.add_argument("--noisy", action="store_true", help="expect a noisy (high-flatness) output")
+    s.add_argument("--centroid", type=float, default=None, help="expected spectral centroid in Hz")
+    s.add_argument("--allow-silent", action="store_true", help="do not require signal (drop the silence gate)")
+    s.add_argument("--allow-clip", action="store_true", help="do not fail on clipping")
+    s.add_argument("--json", action="store_true", help="emit the scorecard as JSON")
+    _add_render_opts(s)
+    s.set_defaults(func=cmd_assert)
 
     d = sub.add_parser("doctor", help="check the Pd install and capture pipeline")
     d.add_argument("--pd", default=None, help="path to the Pd executable")

@@ -2,10 +2,32 @@
 
 from __future__ import annotations
 
+import re
+
 import numpy as np
 
 _NOTE_NAMES = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+_SEMITONE = {"C": 0, "D": 2, "E": 4, "F": 5, "G": 7, "A": 9, "B": 11}
+_NOTE_RE = re.compile(r"^([A-Ga-g])([#b]?)(-?\d+)$")
 _EPS = 1e-12
+
+
+def note_to_hz(name: str) -> float:
+    """Convert a note name like 'A4', 'C#3', or 'Eb2' to Hz (A4 = 440)."""
+    m = _NOTE_RE.match(name.strip())
+    if not m:
+        raise ValueError(f"unrecognized note name: {name!r} (expected e.g. 'A4', 'C#3', 'Eb2')")
+    letter, accidental, octave = m.group(1).upper(), m.group(2), int(m.group(3))
+    semitone = _SEMITONE[letter] + (1 if accidental == "#" else -1 if accidental == "b" else 0)
+    midi = (octave + 1) * 12 + semitone
+    return float(440.0 * 2.0 ** ((midi - 69) / 12.0))
+
+
+def cents_between(measured_hz: float, target_hz: float) -> float:
+    """Signed interval from target to measured, in cents (+ = measured is sharp)."""
+    if measured_hz <= 0 or target_hz <= 0:
+        return float("nan")
+    return float(1200.0 * np.log2(measured_hz / target_hz))
 
 
 def estimate_f0(x: np.ndarray, sr: int, fmin: float = 20.0, fmax: float = 12000.0) -> tuple[float, float]:

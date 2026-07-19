@@ -54,6 +54,19 @@ def test_nosink_raises():
         render(str(FIX / "nosink.pd"), SPEC)
 
 
+def test_over_unity_patch_detected_as_clipping():
+    # osc~ * 8 exceeds full scale; soundfiler normalizes on write, but render()
+    # recovers the true level so the clip is caught rather than hidden.
+    text = (
+        "#N canvas 0 0 300 200 12;\n"
+        "#X obj 40 40 osc~ 440;\n#X obj 40 80 *~ 8;\n#X obj 40 130 dac~;\n"
+        "#X connect 0 0 1 0;\n#X connect 1 0 2 0;\n#X connect 1 0 2 1;\n"
+    )
+    result = render(text, SPEC)
+    assert result.soundfiler_peak == pytest.approx(8.0, abs=0.1)
+    assert analyze(result.audio).is_clipped
+
+
 def test_raw_patch_text_accepted():
     text = (
         "#N canvas 0 0 300 200 12;\n"

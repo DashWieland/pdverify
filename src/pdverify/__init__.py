@@ -13,10 +13,14 @@ analyze() has no dependency on Pd or the renderer, so it doubles as the scoring
 core the planned benchmark will import verbatim.
 """
 
+from . import expect
 from .audio import AudioBuffer
 from .analyze import analyze
 from .report import Report
 from .render import render, RenderSpec, RenderResult
+from .score import score, Score, Scorecard
+from .expect import Expectation
+from .verify import verify
 from .errors import PdVerifyError, PdNotFound, NoSinkFound, RenderFailed
 from .wavio import read_wav
 
@@ -25,11 +29,17 @@ __version__ = "0.1.0"
 __all__ = [
     "analyze",
     "render",
+    "score",
+    "verify",
+    "expect",
     "read_wav",
     "AudioBuffer",
     "Report",
     "RenderSpec",
     "RenderResult",
+    "Score",
+    "Scorecard",
+    "Expectation",
     "PdVerifyError",
     "PdNotFound",
     "NoSinkFound",

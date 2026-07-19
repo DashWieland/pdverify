@@ -25,6 +25,36 @@ $ pdverify analyze build.pd --json
 
 The analysis code (`pdverify.analyze`) imports neither Pd nor the renderer. It works on an audio buffer, so the same code can grade a "make this sound" benchmark later.
 
+## Checking against an expectation
+
+`analyze` reports what a patch sounds like; `assert` checks it against what you asked for and sets an exit code, so it drops into a build-and-check loop.
+
+```console
+$ pdverify assert build.pd --note A4 --tonal --no-clip
+PASS — score 1.00
+  a sine tone at 440.0 Hz (A4, +0 cents); peak -12.0 dBFS, rms -15.1 dBFS over 3.00s.
+
+$ pdverify assert build.pd --note C5        # patch actually produces A4
+FAIL — score 0.00
+  - note: got 440.0 Hz (A4), expected 523.3 Hz (C5): -300 cents  → scale the oscillator frequency by 1.189 (e.g. [osc~ 523])
+```
+
+Checks come in two tiers. Gates — silence, clipping, non-finite output — are pass/fail, and a failed gate forces the score to 0. Graded checks — pitch, level, spectral shape — each yield a value between 0 and 1 through a tolerance curve, combined into the overall score. The same call returns a boolean verdict for a yes/no gate and a continuous score for ranking, which is what lets one function serve both a live check and a benchmark grade.
+
+From Python:
+
+```python
+from pdverify import verify, expect
+
+card = verify("build.pd", [
+    expect.not_silent(), expect.no_clipping(),
+    expect.note("A4", tol_cents=30, weight=2.0),
+    expect.tonal(),
+])
+print(card.passed, card.total)   # True 1.0
+print(card.feedback())           # verdict + the worst failing checks, with fixes
+```
+
 ## Install
 
 ```console
@@ -59,11 +89,14 @@ The second is that a failed render should not be read as silence. A missing exte
 
 ## Status
 
-Early. M0 renders, analyzes, and reports. Planned next:
+Early, and moving. Working now: rendering, analysis, and the `assert` / `verify`
+expectation API with gated and graded scores. Planned next:
 
-- **M1** — an assertion API (`--note A4 --tonal --no-clip`) that returns gated and graded scores, plus feedback aimed at a model correcting a patch.
 - **M2** — `pdverify.bench`: a task format and runner, so the same scoring code grades a shared "make this sound" benchmark.
 - **M3** — an optional MCP adapter, so an agent can call pdverify in a build–render–check loop next to a construction server.
+
+Later: attack/decay envelopes, presence-of-harmonics checks, control-input
+injection for patches driven by notes or triggers, and reference-audio matching.
 
 ## License
 
