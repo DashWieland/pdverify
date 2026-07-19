@@ -1,0 +1,74 @@
+"""Feature tests on synthetic numpy signals. No Pd required — this is the core
+the benchmark scorer will lean on, so it must be correct in isolation."""
+
+import numpy as np
+import pytest
+
+from pdverify import analyze
+from pdverify.audio import AudioBuffer
+
+SR = 44100
+
+
+def _sine(freq, amp, dur=1.0, sr=SR):
+    t = np.arange(int(sr * dur)) / sr
+    return amp * np.sin(2 * np.pi * freq * t)
+
+
+def test_sine_level_and_pitch():
+    r = analyze(AudioBuffer(_sine(440, 0.5), SR))
+    assert not r.is_silent and not r.is_clipped and not r.has_nan_inf
+    assert r.f0_hz == pytest.approx(440, abs=1.0)
+    assert r.note == "A4"
+    assert abs(r.cents_error) < 10
+    assert r.peak_dbfs == pytest.approx(-6.02, abs=0.2)   # 0.5 -> -6 dBFS
+    assert r.rms_dbfs == pytest.approx(-9.03, abs=0.2)    # 0.5/sqrt(2)
+    assert r.flatness < 0.05
+    assert r.timbre == "sine"
+
+
+def test_note_naming_a4_c4():
+    assert analyze(AudioBuffer(_sine(261.63, 0.4), SR)).note == "C4"
+    assert analyze(AudioBuffer(_sine(440.0, 0.4), SR)).note == "A4"
+
+
+def test_white_noise_is_noisy():
+    rng = np.random.default_rng(0)
+    x = 0.3 * rng.standard_normal(SR)
+    r = analyze(AudioBuffer(x, SR))
+    assert r.flatness > 0.2
+    assert r.timbre == "noise"
+
+
+def test_silence_detected():
+    r = analyze(AudioBuffer(np.zeros(SR), SR))
+    assert r.is_silent
+    assert r.f0_hz is None
+
+
+def test_clipping_detected():
+    x = np.ones(SR)  # pinned at full scale
+    r = analyze(AudioBuffer(x, SR))
+    assert r.is_clipped
+
+
+def test_nan_detected():
+    x = _sine(440, 0.5)
+    x[100] = np.nan
+    r = analyze(AudioBuffer(x, SR))
+    assert r.has_nan_inf
+
+
+def test_dc_offset_measured():
+    x = np.full(SR, 0.5)
+    r = analyze(AudioBuffer(x, SR))
+    assert r.dc_offset == pytest.approx(0.5, abs=1e-3)
+
+
+def test_stereo_buffer_pitch():
+    left = _sine(330, 0.4)
+    right = _sine(330, 0.4)
+    buf = AudioBuffer(np.stack([left, right], axis=1), SR)
+    r = analyze(buf)
+    assert r.channels == 2
+    assert r.f0_hz == pytest.approx(330, abs=1.0)

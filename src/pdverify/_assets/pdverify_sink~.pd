@@ -1,0 +1,7 @@
+#N canvas 0 0 320 200 12;
+#X obj 30 30 inlet~;
+#X obj 140 30 inlet~;
+#X obj 30 100 throw~ pdverify_busL;
+#X obj 140 100 throw~ pdverify_busR;
+#X connect 0 0 2 0;
+#X connect 1 0 3 0;

@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# pdverify working artifacts
+*.wav
+!tests/fixtures/**/*.wav
+.pdverify_work/
+
+# Bundled Pd runtime (never commit the third-party binary)
+tools/
+pd-*/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

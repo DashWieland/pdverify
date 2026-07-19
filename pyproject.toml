@@ -1,0 +1,42 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdverify"
+version = "0.1.0"
+description = "Render Pure Data patches headless and verify what they actually sound like."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Dash Wieland" }]
+keywords = ["puredata", "pure-data", "pd", "audio", "dsp", "testing", "verification", "llm", "mcp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Multimedia :: Sound/Audio :: Analysis",
+    "Programming Language :: Python :: 3",
+]
+dependencies = ["numpy>=1.22"]
+
+[project.optional-dependencies]
+mcp = ["mcp>=1.0"]
+plot = ["matplotlib>=3.5"]
+dev = ["pytest>=7"]
+
+[project.scripts]
+pdverify = "pdverify.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/DashWieland/pdverify"
+Issues = "https://github.com/DashWieland/pdverify/issues"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+pdverify = ["_assets/*.pd"]
