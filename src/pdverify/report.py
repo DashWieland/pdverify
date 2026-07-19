@@ -41,6 +41,7 @@ class Report:
     bands: dict  # band label -> fraction of energy
     top_partials: list  # strongest spectral peaks (Hz), loudest first
     motion: str  # temporal character: steady / gently moving / evolving / very dynamic
+    fingerprint: list  # compact L2-normalized log-power timbre vector (for reference matching)
     meta: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:

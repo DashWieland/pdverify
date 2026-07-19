@@ -90,6 +90,24 @@ def band_energies(x: np.ndarray, sr: int) -> dict[str, float]:
     }
 
 
+def log_power_fingerprint(x: np.ndarray, sr: int, n_bands: int = 32, fmin: float = 50.0) -> list[float]:
+    """A compact, level-independent timbre fingerprint: log power in ``n_bands``
+    geometrically-spaced bands, L2-normalized. Cosine similarity between two
+    fingerprints is a robust "do these sound alike" measure — phase- and
+    time-invariant, so it works for drones and textures, not just aligned tones."""
+    if x.size < 64:
+        return [0.0] * n_bands
+    mag, freqs = _spectrum(x, sr)
+    power = mag**2
+    edges = np.geomspace(fmin, sr / 2, n_bands + 1)
+    vec = np.array([power[(freqs >= edges[i]) & (freqs < edges[i + 1])].sum() for i in range(n_bands)])
+    vec = np.log1p(vec)
+    norm = float(np.linalg.norm(vec))
+    if norm > 0:
+        vec = vec / norm
+    return [round(float(v), 5) for v in vec]
+
+
 def top_partials(x: np.ndarray, sr: int, n: int = 6, thresh: float = 0.03) -> list[float]:
     """The strongest spectral peaks (Hz), loudest first — useful for telling a
     clean tone from a rich harmonic stack from an inharmonic/metallic spectrum."""

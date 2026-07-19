@@ -67,4 +67,5 @@ def analyze(audio: AudioBuffer | np.ndarray, sr: int = 44100) -> Report:
         bands=spectral.band_energies(safe, sr),
         top_partials=spectral.top_partials(safe, sr),
         motion=motion_label,
+        fingerprint=spectral.log_power_fingerprint(safe, sr),
     )

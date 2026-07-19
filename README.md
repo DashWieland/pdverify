@@ -62,6 +62,22 @@ print(card.passed, card.total)   # True 1.0
 print(card.feedback())           # verdict + the worst failing checks, with fixes
 ```
 
+## Matching a reference — "make it sound like this"
+
+The one goal that turns a subjective target into an objective score. Point it at
+a reference (a `.wav` or another `.pd`) and it scores the timbre similarity and
+says how to close the gap:
+
+```console
+$ pdverify compare my_attempt.pd --ref target.wav
+47% match to the reference. To close the gap: reduce bass; add low-mid body;
+target is 'evolving', yours is 'steady'.
+```
+
+The similarity is a climbable gradient (a closer patch scores higher), and
+`expect.matches_reference(ref)` plugs it into the same scored expectations as
+everything else — so "sound like this" becomes a checkable, gradeable goal.
+
 ## Install
 
 ```console

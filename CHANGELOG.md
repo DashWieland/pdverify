@@ -2,6 +2,18 @@
 
 ## 0.1.0 (unreleased)
 
+### Reference matching — "make it sound like this"
+
+- `compare(candidate, target)` scores how close two sounds are (timbre-fingerprint
+  cosine, phase/time-invariant) and returns concrete moves to close the gap —
+  brighter/darker, pitch shift, level, add/reduce a frequency band, more/less
+  motion. Turns a subjective target into an objective, climbable score.
+- `expect.matches_reference(ref, tol)` — a graded expectation against a reference
+  that may be a Report, an AudioBuffer, a `.wav`, or a `.pd` (rendered on the fly).
+  Any rendering happens when the expectation is built, so `score()` stays Pd-free.
+- `pdverify compare patch.pd --ref target.wav` CLI.
+- A compact L2-normalized log-power `fingerprint` is added to every Report.
+
 ### Plain-language description
 
 - `report.summary()` now returns a perceptual, human-meaningful sentence instead

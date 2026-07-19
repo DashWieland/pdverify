@@ -111,6 +111,28 @@ def cmd_spectrogram(args) -> int:
     return 0
 
 
+def _audio_for(patch_or_wav, args):
+    p = Path(patch_or_wav)
+    if p.suffix.lower() == ".wav":
+        return read_wav(p)
+    return render(str(patch_or_wav), _spec(args)).audio
+
+
+def cmd_compare(args) -> int:
+    from .compare import compare
+
+    candidate = analyze(_audio_for(args.patch, args))
+    reference = analyze(_audio_for(args.reference, args))
+    comp = compare(candidate, reference)
+    if args.json:
+        import json
+
+        print(json.dumps({"similarity": comp.similarity, "diffs": comp.diffs}, indent=2))
+    else:
+        print(comp.feedback())
+    return 0
+
+
 def cmd_doctor(args) -> int:
     print(f"pdverify {__version__}")
     try:
@@ -169,6 +191,13 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--json", action="store_true", help="emit the scorecard as JSON")
     _add_render_opts(s)
     s.set_defaults(func=cmd_assert)
+
+    c = sub.add_parser("compare", help="compare a patch against a reference sound (.pd or .wav)")
+    c.add_argument("patch", help="path to a .pd patch or a .wav file")
+    c.add_argument("--reference", "--ref", required=True, dest="reference", help="reference .pd or .wav to match")
+    c.add_argument("--json", action="store_true", help="emit the comparison as JSON")
+    _add_render_opts(c)
+    c.set_defaults(func=cmd_compare)
 
     g = sub.add_parser("spectrogram", help="render a patch (or read a .wav) and save a spectrogram PNG")
     g.add_argument("patch", help="path to a .pd patch or a .wav file")

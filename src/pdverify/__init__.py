@@ -21,6 +21,7 @@ from .render import render, RenderSpec, RenderResult
 from .score import score, Score, Scorecard
 from .expect import Expectation
 from .verify import verify
+from .compare import compare, Comparison
 from .errors import PdVerifyError, PdNotFound, NoSinkFound, RenderFailed
 from .wavio import read_wav
 
@@ -31,6 +32,8 @@ __all__ = [
     "render",
     "score",
     "verify",
+    "compare",
+    "Comparison",
     "expect",
     "read_wav",
     "AudioBuffer",

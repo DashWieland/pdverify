@@ -175,6 +175,58 @@ def noisy(min_flatness: float = 0.5, weight: float = 1.0) -> Expectation:
     return Expectation("noisy", "graded", weight, ev)
 
 
+def _reference_report(reference) -> Report:
+    """Resolve a reference into an analysis Report. Accepts a Report, an
+    AudioBuffer, a .wav path, a .pd patch path, or raw patch text. Any rendering
+    happens here (at construction time), so score() stays Pd-free."""
+    from pathlib import Path
+
+    from .analyze import analyze
+    from .audio import AudioBuffer
+
+    if isinstance(reference, Report):
+        return reference
+    if isinstance(reference, AudioBuffer):
+        return analyze(reference)
+    if isinstance(reference, str) and "#N canvas" in reference:
+        from .render import render
+
+        return analyze(render(reference).audio)
+    p = Path(str(reference))
+    if p.suffix.lower() == ".wav":
+        from .wavio import read_wav
+
+        return analyze(read_wav(p))
+    from .render import render
+
+    return analyze(render(str(p)).audio)
+
+
+def matches_reference(reference, tol: float = 0.2, weight: float = 1.0) -> Expectation:
+    """Graded: how close the patch sounds to ``reference`` (a Report, AudioBuffer,
+    .wav, or .pd). Scored by timbre-fingerprint similarity; the hint says how to
+    close the gap."""
+    ref = _reference_report(reference)
+
+    def ev(r: Report) -> Score:
+        from .compare import compare
+
+        comp = compare(r, ref)
+        dist = 1.0 - comp.similarity
+        passed = dist <= tol
+        detail = f"{comp.similarity * 100:.0f}% timbre match to reference"
+        if comp.diffs:
+            detail += " — " + "; ".join(comp.diffs)
+        return Score(
+            field="matches_reference", kind="graded", value=linear_ramp(dist, tol), passed=passed,
+            measured=round(comp.similarity, 3), target=f">= {1 - tol:.2f} similarity",
+            weight=weight, tolerance=tol, detail=detail,
+            pd_hint=(comp.diffs[0] if comp.diffs else None),
+        )
+
+    return Expectation("matches_reference", "graded", weight, ev)
+
+
 def centroid(hz: float, tol: float = 0.2, rel: bool = True, weight: float = 1.0) -> Expectation:
     def ev(r: Report) -> Score:
         tol_abs = hz * tol if rel else tol
