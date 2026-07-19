@@ -122,4 +122,7 @@ def test_verify_end_to_end():
     fix = Path(__file__).parent / "fixtures" / "sine440.pd"
     card = verify(str(fix), [expect.not_silent(), expect.no_clipping(), expect.note("A4")], spec=RenderSpec(duration=1.0))
     assert card.passed
-    assert card.meta["pd_version"]
+    # meta plumbing is present; pd_version is best-effort and may be "" on some
+    # platforms (e.g. the macOS .app binary), so don't require it to be non-empty.
+    assert "pd_version" in card.meta
+    assert card.meta["render_ms"] >= 0

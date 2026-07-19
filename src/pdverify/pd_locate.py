@@ -86,6 +86,14 @@ def _query_version(pd_path: str) -> str:
     return m.group(1).replace("-", ".") if m else ""
 
 
+def _version_from_path(pd_path: str) -> str:
+    """Best-effort version from the install path, e.g. .../Pd-0.56-2.app/... or
+    tools/pd-0.56-2/bin/pd. Used when `pd -version` can't be parsed (seen on the
+    macOS .app binary)."""
+    m = re.search(r"[Pp]d[-_ ]?(\d+\.\d+(?:[.-]\d+)?)", pd_path)
+    return m.group(1).replace("-", ".") if m else ""
+
+
 def discover(explicit: str | None = None) -> PdBinary:
     """Return the first usable Pd binary, or raise PdNotFound."""
     cands = _candidates(explicit)
@@ -95,4 +103,5 @@ def discover(explicit: str | None = None) -> PdBinary:
             "put it on PATH, or set PDVERIFY_PD to the pd executable."
         )
     chosen = cands[0]
-    return PdBinary(path=chosen, version=_query_version(chosen))
+    version = _query_version(chosen) or _version_from_path(chosen)
+    return PdBinary(path=chosen, version=version)
