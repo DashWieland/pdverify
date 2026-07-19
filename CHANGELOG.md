@@ -2,6 +2,18 @@
 
 ## 0.1.0 (unreleased)
 
+### Plain-language description
+
+- `report.summary()` now returns a perceptual, human-meaningful sentence instead
+  of a number dump — e.g. "An evolving, dark, sub-heavy chord with hollow,
+  scooped mids, an airy high-frequency haze, and no single clear pitch." A
+  `report.descriptors()` accessor gives the same as structured tags. The point:
+  an agent (or person) shouldn't have to read a spectrogram or know what a
+  kilohertz is to know what a patch sounds like.
+- New temporal `motion` feature (steady / gently moving / evolving / very
+  dynamic) from loudness-envelope variation and spectral flux across the whole
+  signal — so "evolving" is measured, not eyeballed.
+
 ### Spectral analysis and visualization
 
 - `analyze()` now reports a full-spectrum band-energy breakdown (sub / bass /

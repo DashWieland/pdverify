@@ -131,6 +131,18 @@ def test_centroid_high_for_high_tone():
     assert analyze(AudioBuffer(_sine(8000, 0.5), SR)).centroid_hz > 5000
 
 
+def test_motion_steady_for_held_sine():
+    assert analyze(AudioBuffer(_sine(440, 0.5, dur=2.0), SR)).motion == "steady"
+
+
+def test_motion_detects_a_sweep():
+    dur = 2.0
+    t = np.arange(int(SR * dur)) / SR
+    freq = 200 + (2200 - 200) * t / dur  # rising sweep
+    x = 0.5 * np.sin(2 * np.pi * np.cumsum(freq) / SR)
+    assert analyze(AudioBuffer(x, SR)).motion != "steady"
+
+
 def test_stereo_buffer_pitch():
     left = _sine(330, 0.4)
     right = _sine(330, 0.4)

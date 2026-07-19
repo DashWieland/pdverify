@@ -49,7 +49,8 @@ def cmd_analyze(args) -> int:
         print(report.to_json())
     else:
         print(report.pretty())
-        print("\n" + report.summary())
+        print(f"\nsounds like: {report.summary()}")
+        print(f"tags:        {', '.join(report.descriptors())}")
     return 0
 
 

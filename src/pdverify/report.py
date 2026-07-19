@@ -40,6 +40,7 @@ class Report:
     timbre: str
     bands: dict  # band label -> fraction of energy
     top_partials: list  # strongest spectral peaks (Hz), loudest first
+    motion: str  # temporal character: steady / gently moving / evolving / very dynamic
     meta: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
@@ -51,20 +52,18 @@ class Report:
         return json.dumps(self.to_dict(), indent=indent, sort_keys=True)
 
     def summary(self) -> str:
-        """One-line, human/LLM-facing description of what the patch sounds like."""
-        if self.has_nan_inf:
-            return "Output contains NaN/Inf — the DSP graph is unstable."
-        if self.is_silent:
-            return "Output is silent (no signal above -60 dBFS)."
-        bits = []
-        if self.f0_hz and self.pitch_confidence >= 0.5:
-            bits.append(f"a {self.timbre} tone at {self.f0_hz:.1f} Hz ({self.note}, {self.cents_error:+.0f} cents)")
-        else:
-            bits.append(f"{self.timbre} content (centroid {self.centroid_hz:.0f} Hz)")
-        bits.append(f"peak {self.peak_dbfs:.1f} dBFS, rms {self.rms_dbfs:.1f} dBFS")
-        if self.is_clipped:
-            bits.append("CLIPPING")
-        return "; ".join(bits) + f" over {self.duration:.2f}s."
+        """One-line perceptual description of what the patch sounds like."""
+        from .describe import describe
+
+        return describe(self)
+
+    def descriptors(self) -> list:
+        """Perceptual tags for the sound, most-defining first (e.g. ['evolving',
+        'dark', 'sub-heavy', 'hollow mids', 'airy high end', 'chordal',
+        'no clear pitch'])."""
+        from .describe import descriptors
+
+        return descriptors(self)
 
     def pretty(self) -> str:
         lines = [
@@ -74,6 +73,7 @@ class Report:
             f"spectrum    centroid {self.centroid_hz:.0f} Hz   rolloff {self.rolloff_hz:.0f} Hz   flatness {self.flatness:.3f}  -> {self.timbre}",
             f"bands       {self._fmt_bands()}",
             f"partials    {self._fmt_partials()}",
+            f"motion      {self.motion}",
             f"integrity   silent={self.is_silent}  clipped={self.is_clipped}  nan/inf={self.has_nan_inf}  dc={self.dc_offset:+.4f}",
         ]
         return "\n".join(lines)

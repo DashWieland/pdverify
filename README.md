@@ -1,23 +1,26 @@
 # pdverify
 
-Render a Pure Data patch to audio without the GUI, then measure what it produced: pitch, level, timbre, and signal health.
+Render a Pure Data patch to audio without the GUI, then describe what it produced — in plain language, not just numbers.
 
-Several tools now let a language model build Pd patches — MCP servers that add objects and connect them over FUDI or OSC. They check whether a patch loads, not whether it makes the intended sound, and a patch can load cleanly while being silent, an octave off, or clipping. pdverify checks the audio. Give it a `.pd` file; it renders the patch offline (about 40 times faster than real time), analyzes the output, and reports what came out. Its only dependency beyond the Python standard library is NumPy.
+Several tools now let a language model build Pd patches — MCP servers that add objects and connect them over FUDI or OSC. They check whether a patch loads, not whether it makes the intended sound, and a patch can load cleanly while being silent, an octave off, or clipping. pdverify checks the audio. Give it a `.pd` file; it renders the patch offline (about 40 times faster than real time), analyzes the output, and tells you what came out. Its only dependency beyond the Python standard library is NumPy.
 
 ```console
-$ pdverify analyze my_patch.pd
-duration    3.000s  44100 Hz  2ch
-level       peak -12.04 dBFS   rms -15.05 dBFS   crest 1.41
-pitch       440.01 Hz -> A4 (+0 cents)  conf 1.00
-spectrum    centroid 440 Hz   rolloff 441 Hz   flatness 0.000  -> sine
-bands       sub 0%  bass 0%  low_mid 100%  mid 0%  high_mid 0%  presence 0%  brilliance 0%
-partials    440 Hz
-integrity   silent=False  clipped=False  nan/inf=False  dc=-0.0000
+$ pdverify analyze fmdrone.pd
+duration    8.000s  44100 Hz  2ch
+level       peak -6.79 dBFS   rms -15.95 dBFS   crest 2.87
+pitch       196.54 Hz -> G3 (+5 cents)  conf 0.08
+spectrum    centroid 2994 Hz   rolloff 852 Hz   flatness 0.000  -> inharmonic
+bands       sub 17%  bass 23%  low_mid 36%  mid 12%  high_mid 0%  presence 0%  brilliance 13%
+partials    196 Hz, 327 Hz, 262 Hz, 590 Hz, 393 Hz, 130 Hz
+motion      evolving
+integrity   silent=False  clipped=False  nan/inf=False  dc=-0.0352
 
-a sine tone at 440.0 Hz (A4, +0 cents); peak -12.0 dBFS, rms -15.1 dBFS over 3.00s.
+sounds like: An evolving, dark, sub-heavy chord with hollow, scooped mids, an airy
+             high-frequency haze, and no single clear pitch.
+tags:        evolving, dark, sub-heavy, hollow mids, airy high end, chordal, no clear pitch
 ```
 
-For a visual, `pdverify spectrogram my_patch.pd -o out.png` (needs `pip install pdverify[plot]`).
+The `sounds like` line and `tags` are the point: an agent (or a person) gets a usable description of the sound without reading a spectrogram or knowing what a kilohertz is. For a visual, `pdverify spectrogram my_patch.pd -o out.png` (needs `pip install pdverify[plot]`).
 
 ## How it fits with the patch-building tools
 

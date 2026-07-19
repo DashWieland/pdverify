@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from .audio import AudioBuffer
-from .features import integrity, level, pitch, spectral
+from .features import integrity, level, pitch, spectral, temporal
 from .report import Report
 
 
@@ -38,6 +38,7 @@ def analyze(audio: AudioBuffer | np.ndarray, sr: int = 44100) -> Report:
     nan_inf = integrity.has_nan_inf(full)
     safe = np.nan_to_num(mono) if nan_inf else mono
 
+    motion_label, _motion_amt = temporal.motion(safe, sr)
     f0, conf = pitch.estimate_f0(safe, sr)
     note, cents = pitch.hz_to_note(f0)
     flat = spectral.spectral_flatness(safe, sr)
@@ -65,4 +66,5 @@ def analyze(audio: AudioBuffer | np.ndarray, sr: int = 44100) -> Report:
         timbre=timbre,
         bands=spectral.band_energies(safe, sr),
         top_partials=spectral.top_partials(safe, sr),
+        motion=motion_label,
     )
