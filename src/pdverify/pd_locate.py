@@ -38,28 +38,35 @@ def _candidates(explicit: str | None) -> list[str]:
     if env:
         out.append(env)
 
-    # Dev convenience: a portable Pd unzipped under tools/ near the cwd or its
-    # parents (this repo keeps one at ../tools/pd-0.56-2 during development).
-    names = ["pd.com", "pd.exe"] if _IS_WIN else ["pd"]
-    base = Path.cwd()
-    for root in [base, *base.parents[:3]]:
-        for name in names:
-            out += sorted(glob(str(root / "tools" / "pd-*" / "bin" / name)), reverse=True)
-
+    # A real install on PATH wins next.
     for name in (["pd.com", "pd.exe"] if _IS_WIN else ["pd", "puredata"]):
         found = shutil.which(name)
         if found:
             out.append(found)
 
+    # Per-OS default install locations (including the per-user Programs dir).
     if _IS_WIN:
-        for pf in filter(None, [os.environ.get("ProgramFiles"), os.environ.get("ProgramFiles(x86)")]):
-            out += sorted(glob(str(Path(pf) / "Pd" / "bin" / "pd.com")), reverse=True)
-            out += sorted(glob(str(Path(pf) / "Pd" / "bin" / "pd.exe")), reverse=True)
+        roots = filter(None, [
+            os.environ.get("LOCALAPPDATA") and str(Path(os.environ["LOCALAPPDATA"]) / "Programs" / "Pd"),
+            os.environ.get("ProgramFiles") and str(Path(os.environ["ProgramFiles"]) / "Pd"),
+            os.environ.get("ProgramFiles(x86)") and str(Path(os.environ["ProgramFiles(x86)"]) / "Pd"),
+        ])
+        for root in roots:
+            out += sorted(glob(str(Path(root) / "bin" / "pd.com")), reverse=True)
+            out += sorted(glob(str(Path(root) / "bin" / "pd.exe")), reverse=True)
     elif platform.system() == "Darwin":
         out += sorted(glob("/Applications/Pd-*.app/Contents/Resources/bin/pd"), reverse=True)
         out += ["/opt/homebrew/bin/pd", "/usr/local/bin/pd"]
     else:
         out += ["/usr/bin/pd", "/usr/local/bin/pd"]
+
+    # Dev fallback (last): a portable Pd unzipped under tools/ near the cwd. A
+    # real install above is always preferred over a repo-local copy.
+    names = ["pd.com", "pd.exe"] if _IS_WIN else ["pd"]
+    base = Path.cwd()
+    for root in [base, *base.parents[:3]]:
+        for name in names:
+            out += sorted(glob(str(root / "tools" / "pd-*" / "bin" / name)), reverse=True)
 
     # de-dupe, preserving order
     seen: set[str] = set()
