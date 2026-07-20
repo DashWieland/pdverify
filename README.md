@@ -62,6 +62,25 @@ print(card.passed, card.total)   # True 1.0
 print(card.feedback())           # verdict + the worst failing checks, with fixes
 ```
 
+## Playing instruments
+
+Many patches are instruments — silent until something sends them a note or a
+parameter. Drive them during the render so pdverify hears what they actually do:
+
+```console
+$ pdverify analyze synth.pd --play-note C4      # plays a MIDI note into [notein]
+```
+
+```python
+from pdverify import render, analyze, control
+from pdverify.render import RenderSpec
+
+controls = control.note("C4", dur=1.0) + control.note("E4", at=1.0) + control.send("cutoff", 2000)
+report = analyze(render("synth.pd", RenderSpec(duration=3.0, controls=controls)).audio)
+```
+
+`note` drives the patch's `[notein]`; `send`/`bang` reach any `[receive <name>]`.
+
 ## Matching a reference — "make it sound like this"
 
 The one goal that turns a subjective target into an objective score. Point it at

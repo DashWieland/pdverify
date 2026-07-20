@@ -2,6 +2,19 @@
 
 ## 0.1.0 (unreleased)
 
+### Control injection — play instruments, not just self-playing patches
+
+- `control.note()` / `control.send()` / `control.bang()` describe timed control
+  input; pass them as `RenderSpec(controls=...)` and the renderer schedules them
+  into the patch during the render. So a synth that's silent until it gets a note
+  can finally be heard.
+- Notes drive a patch's `[notein]`, which is rewritten to a message-driven shim
+  (`pdverify_notein`) the same way `[dac~]` is — since built-ins can't be
+  shadowed. `send`/`bang` reach any `[receive <name>]`.
+- `pdverify analyze synth.pd --play-note C4` on the CLI.
+- Verified: a `[notein]->[mtof]->[osc~]` synth plays A4 on `--play-note A4`; a
+  `[r freq]`-driven synth plays the sent frequency.
+
 ### Reference matching — "make it sound like this"
 
 - `compare(candidate, target)` scores how close two sounds are (timbre-fingerprint

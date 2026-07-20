@@ -27,6 +27,11 @@ _SINK_RE = re.compile(
 )
 
 SINK_ABSTRACTION = "pdverify_sink~"
+NOTEIN_ABSTRACTION = "pdverify_notein"
+
+# [notein] can't be shadowed either; rewrite it to a message-driven shim so
+# scheduled note events can play the patch. Any channel arg is dropped.
+_NOTEIN_RE = re.compile(r"^(#X obj\s+-?\d+\s+-?\d+\s+)notein(?=\s|$).*$", re.DOTALL)
 
 
 def rewrite_sinks(patch_text: str, replacement: str = SINK_ABSTRACTION) -> tuple[str, int]:
@@ -47,6 +52,25 @@ def rewrite_sinks(patch_text: str, replacement: str = SINK_ABSTRACTION) -> tuple
             if n:
                 # preserve any leading newline that lstrip removed
                 lead = part[: len(part) - len(part.lstrip("\n"))]
+                out.append(lead + new)
+                count += 1
+                continue
+        out.append(part)
+    return "".join(out), count
+
+
+def rewrite_notein(patch_text: str, replacement: str = NOTEIN_ABSTRACTION) -> tuple[str, int]:
+    """Rewrite every ``[notein]`` object box to the message-driven shim. Returns
+    (rewritten_text, count)."""
+    parts = re.split(r"(;)", patch_text)
+    count = 0
+    out = []
+    for part in parts:
+        if part.lstrip().startswith("#X obj"):
+            stripped = part.lstrip("\n")
+            new, n = _NOTEIN_RE.subn(rf"\g<1>{replacement}", stripped, count=1)
+            if n:
+                lead = part[: len(part) - len(stripped)]
                 out.append(lead + new)
                 count += 1
                 continue

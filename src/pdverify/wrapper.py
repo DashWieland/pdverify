@@ -24,9 +24,23 @@ ARR_L = "pdverify_outL"
 ARR_R = "pdverify_outR"
 
 
-def build_wrapper(out_wav: str | Path, n_frames: int, sr: int, tail: float = 0.4) -> str:
+# small settle so control events never fire before DSP is on
+_WARMUP_MS = 15
+
+
+def _fmt_atom(a) -> str:
+    if isinstance(a, float) and a.is_integer():
+        return str(int(a))
+    return str(a)
+
+
+def build_wrapper(out_wav: str | Path, n_frames: int, sr: int, tail: float = 0.4, controls=()) -> str:
     """Return the .pd text for a recorder wrapper capturing ``n_frames`` samples
-    and writing them to ``out_wav`` (an absolute path)."""
+    and writing them to ``out_wav`` (an absolute path).
+
+    ``controls`` is an iterable of Control events; each becomes a
+    ``[del t] -> [; receiver atoms(`` chain fired from loadbang, so the patch is
+    played during the render."""
     # soundfiler resolves relative paths against the containing canvas's dir, so
     # the caller must pass an absolute path; Pd accepts forward slashes on Windows.
     wav = Path(out_wav).as_posix()
@@ -62,4 +76,18 @@ def build_wrapper(out_wav: str | Path, n_frames: int, sr: int, tail: float = 0.4
         "#X connect 9 0 10 0;",
         "#X connect 11 0 12 0;",
     ]
+
+    # loadbang is object index 4; append a [del t] -> [; receiver atoms( per event
+    idx = 15
+    y = 340
+    for c in controls:
+        t_ms = max(0, int(round(c.at * 1000)) + _WARMUP_MS)
+        atoms = " ".join(_fmt_atom(a) for a in c.atoms)
+        lines.append(f"#X obj 30 {y} del {t_ms};")
+        lines.append(f"#X msg 30 {y + 25} \\; {c.receiver} {atoms};")
+        lines.append(f"#X connect 4 0 {idx} 0;")
+        lines.append(f"#X connect {idx} 0 {idx + 1} 0;")
+        idx += 2
+        y += 55
+
     return "\n".join(lines) + "\n"

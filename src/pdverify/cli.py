@@ -27,13 +27,22 @@ _DOCTOR_PATCH = (
 
 
 def _spec(args) -> RenderSpec:
-    return RenderSpec(duration=args.dur, sr=args.sr, pd_binary=args.pd)
+    controls: tuple = ()
+    play = getattr(args, "play_note", None)
+    if play:
+        from . import control
+
+        controls = tuple(control.note(play, at=0.05, dur=max(0.1, args.dur * 0.9), velocity=getattr(args, "play_vel", 100)))
+    return RenderSpec(duration=args.dur, sr=args.sr, pd_binary=args.pd, controls=controls)
 
 
 def _add_render_opts(p: argparse.ArgumentParser) -> None:
     p.add_argument("--dur", type=float, default=3.0, help="capture duration in seconds (default 3.0)")
     p.add_argument("--sr", type=int, default=44100, help="sample rate (default 44100)")
     p.add_argument("--pd", default=None, help="path to the Pd executable (overrides discovery)")
+    p.add_argument("--play-note", default=None, dest="play_note",
+                   help="play a MIDI note into the patch's [notein] for the render (e.g. C4 or 60)")
+    p.add_argument("--play-vel", type=int, default=100, dest="play_vel", help="velocity for --play-note (default 100)")
 
 
 def cmd_analyze(args) -> int:

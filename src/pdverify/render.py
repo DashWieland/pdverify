@@ -22,10 +22,11 @@ from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
 
+from . import control as _control
 from .audio import AudioBuffer
 from .errors import NoSinkFound, RenderFailed
 from .pd_locate import discover
-from .rewrite import SINK_ABSTRACTION, rewrite_sinks
+from .rewrite import NOTEIN_ABSTRACTION, SINK_ABSTRACTION, rewrite_notein, rewrite_sinks
 from .wavio import read_wav
 from .wrapper import build_wrapper
 
@@ -46,6 +47,7 @@ class RenderSpec:
     tail: float = 0.4
     timeout: float = 30.0
     keep_workdir: bool = False
+    controls: tuple = ()  # Control events to play into the patch during render
 
 
 @dataclass(frozen=True)
@@ -102,6 +104,11 @@ def render(patch: str | Path, spec: RenderSpec | None = None) -> RenderResult:
             "via send~/throw~ or [outlet~] need a tap strategy not yet in M0.)"
         )
 
+    controls = tuple(spec.controls)
+    needs_notein = _control.has_notes(controls)
+    if needs_notein:
+        instrumented, _ = rewrite_notein(instrumented)
+
     n_frames = int(round(spec.sr * spec.duration))
     work = Path(tempfile.mkdtemp(prefix="pdverify_"))
     if " " in str(work):
@@ -114,11 +121,15 @@ def render(patch: str | Path, spec: RenderSpec | None = None) -> RenderResult:
         out_wav = work / "capture.wav"
         (work / "patch.pd").write_text(instrumented, encoding="utf-8")
         (work / "wrapper.pd").write_text(
-            build_wrapper(out_wav, n_frames, spec.sr, spec.tail), encoding="utf-8"
+            build_wrapper(out_wav, n_frames, spec.sr, spec.tail, controls), encoding="utf-8"
         )
-        # place the sink abstraction where -path can find it
-        sink_src = resources.files("pdverify._assets").joinpath(f"{SINK_ABSTRACTION}.pd")
-        (work / f"{SINK_ABSTRACTION}.pd").write_text(sink_src.read_text(encoding="utf-8"), encoding="utf-8")
+        # place the tap abstractions where -path can find them
+        assets = [SINK_ABSTRACTION]
+        if needs_notein:
+            assets.append(NOTEIN_ABSTRACTION)
+        for name in assets:
+            src = resources.files("pdverify._assets").joinpath(f"{name}.pd")
+            (work / f"{name}.pd").write_text(src.read_text(encoding="utf-8"), encoding="utf-8")
 
         cmd = [
             pd.path, "-nogui", "-batch", "-noaudio", "-r", str(spec.sr),

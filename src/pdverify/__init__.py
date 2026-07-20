@@ -13,6 +13,7 @@ analyze() has no dependency on Pd or the renderer, so it doubles as the scoring
 core the planned benchmark will import verbatim.
 """
 
+from . import control
 from . import expect
 from .audio import AudioBuffer
 from .analyze import analyze
@@ -35,6 +36,7 @@ __all__ = [
     "compare",
     "Comparison",
     "expect",
+    "control",
     "read_wav",
     "AudioBuffer",
     "Report",
