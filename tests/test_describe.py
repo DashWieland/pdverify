@@ -53,3 +53,19 @@ def test_noise_reads_noisy_no_pitch():
 
 def test_silent_describes_silent():
     assert "Silent" in describe(analyze(AudioBuffer(np.zeros(SR), SR)))
+
+
+def test_all_output_is_ascii():
+    # non-ASCII in printed output crashes cp1252 (Windows) consoles; keep it ASCII
+    from pdverify import compare, expect, score
+
+    buffers = [_sine(440), _sine(60), AudioBuffer(np.zeros(SR), SR), AudioBuffer(np.ones(SR), SR)]
+    for buf in buffers:
+        r = analyze(buf)
+        assert describe(r).isascii(), describe(r)
+        assert all(t.isascii() for t in descriptors(r))
+    card = score(analyze(_sine(220)), [expect.note("A4"), expect.not_silent(), expect.no_clipping()])
+    assert card.feedback().isascii()
+    assert card.summary().isascii()
+    c = compare(analyze(_sine(440)), analyze(_sine(880)))
+    assert c.feedback().isascii()

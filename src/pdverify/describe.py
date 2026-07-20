@@ -109,9 +109,9 @@ def descriptors(report) -> list[str]:
 def describe(report) -> str:
     """A single natural-language sentence composed from the tags."""
     if report.has_nan_inf:
-        return "Unstable output — the DSP graph produced NaN/Inf."
+        return "Unstable output - the DSP graph produced NaN/Inf."
     if report.is_silent:
-        return "Silent — no signal above -60 dBFS."
+        return "Silent - no signal above -60 dBFS."
 
     ton = _tonality(report)
     kind = _TYPE[ton]
@@ -143,5 +143,5 @@ def describe(report) -> str:
     if report.pitch_confidence >= 0.6 and report.note:
         sentence += f", pitched near {report.note}"
     if report.is_clipped:
-        sentence += " — and it clips"
+        sentence += " - and it clips"
     return sentence + "."

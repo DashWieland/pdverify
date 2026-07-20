@@ -2,6 +2,15 @@
 
 ## 0.1.0 (unreleased)
 
+### Fixes & docs
+
+- All human-facing output (summary/feedback/describe/compare) is now pure ASCII.
+  A Unicode arrow/em-dash crashed cp1252 (Windows) consoles on print — a real bug
+  for Windows users of the CLI. Guarded by a test.
+- `examples/loop_with_construction_mcp.md`: a worked build -> hear -> fix loop
+  pairing pdverify with a real construction MCP (jfboisvenue/pd-mcp-server),
+  including a closed loop where pdverify's measured pitch drives the fix.
+
 ### Control injection — play instruments, not just self-playing patches
 
 - `control.note()` / `control.send()` / `control.bang()` describe timed control

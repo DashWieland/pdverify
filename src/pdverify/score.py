@@ -91,12 +91,12 @@ class Scorecard:
         return "PASS" if self.passed else "FAIL"
 
     def summary(self) -> str:
-        return f"{self.verdict()} (score {self.total:.2f}) — {self.report.summary()}"
+        return f"{self.verdict()} (score {self.total:.2f}) - {self.report.summary()}"
 
     def feedback(self, limit: int = 3) -> str:
         """Verdict plus the worst failing checks, with repair hints — the string
         an agent reads to decide what to change next."""
-        lines = [f"{self.verdict()} — score {self.total:.2f}"]
+        lines = [f"{self.verdict()} - score {self.total:.2f}"]
         failures = [s for s in self.scores if not s.passed]
         if not failures:
             lines.append(f"  {self.report.summary()}")
@@ -104,7 +104,7 @@ class Scorecard:
         for s in failures[:limit]:
             line = f"  - {s.field}: {s.detail}" if s.detail else f"  - {s.field}: failed"
             if s.pd_hint:
-                line += f"  → {s.pd_hint}"
+                line += f"  -> {s.pd_hint}"
             lines.append(line)
         if len(failures) > limit:
             lines.append(f"  (+{len(failures) - limit} more)")

@@ -216,7 +216,7 @@ def matches_reference(reference, tol: float = 0.2, weight: float = 1.0) -> Expec
         passed = dist <= tol
         detail = f"{comp.similarity * 100:.0f}% timbre match to reference"
         if comp.diffs:
-            detail += " — " + "; ".join(comp.diffs)
+            detail += " - " + "; ".join(comp.diffs)
         return Score(
             field="matches_reference", kind="graded", value=linear_ramp(dist, tol), passed=passed,
             measured=round(comp.similarity, 3), target=f">= {1 - tol:.2f} similarity",

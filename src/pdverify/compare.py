@@ -45,7 +45,7 @@ class Comparison:
     def feedback(self) -> str:
         head = f"{self.similarity * 100:.0f}% match to the reference"
         if not self.diffs:
-            return head + " — very close."
+            return head + " - very close."
         return head + ". To close the gap: " + "; ".join(self.diffs) + "."
 
 
