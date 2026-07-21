@@ -131,11 +131,23 @@ The second is that a failed render should not be read as silence. A missing exte
 
 ## Status
 
-Early, and moving. Working now: rendering, analysis, and the `assert` / `verify`
-expectation API with gated and graded scores. Planned next:
+Early, but the core is real and working:
+
+- **render** — headless offline capture (~40× realtime)
+- **analyze** — pitch, level, integrity gates, spectral bands + partials, motion,
+  and a plain-language description
+- **assert / verify** — scored expectations (gated + graded) with corrective feedback
+- **compare** — reference matching ("make it sound like this")
+- **control injection** — play instruments with notes/messages during the render
+- **spectrogram** — PNG output (`[plot]` extra)
+
+Validated end-to-end against a real construction MCP in a build → hear → fix loop
+(see [`examples/loop_with_construction_mcp.md`](examples/loop_with_construction_mcp.md)).
+
+Planned next:
 
 - **M2** — `pdverify.bench`: a task format and runner, so the same scoring code grades a shared "make this sound" benchmark.
-- **M3** — an optional MCP adapter, so an agent can call pdverify in a build–render–check loop next to a construction server.
+- Deeper repair feedback (past pitch), broader control (MIDI CC, arrays), and hardening the perceptual descriptors against a wider corpus.
 
 Later: attack/decay envelopes, presence-of-harmonics checks, control-input
 injection for patches driven by notes or triggers, and reference-audio matching.
